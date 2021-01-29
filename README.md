@@ -182,6 +182,156 @@ arguments to `argparse`.
 
 Run `(doc argparse/argparse)` after importing for more information.
 
+## Temple
+
+HTML templates for Janet.
+
+Simplified version of Mendoza's template system that is cleaner and easier to use.
+Templates can be used recursively, and output is printed via `print`, so goes to
+`(dyn :out)`.
+
+Expands on the mendoza templates with the `{-` ... `-}` brackets, which do non-escaped
+substitution, so temple can be used for formats besides HTML.
+Also exposes the `escape` function inside templates for HTML escaping
+if you want to manually print to template output.
+
+### Example
+
+#### foo.temple
+
+```
+{$ (def n 20) # Run at template compile time $}
+<html>
+  <body>
+    {{ (string/repeat "<>" n) # HTML escaped }}
+    <ul>
+      {% (each x (range n) (print "<li>" x " " (args :a) "</li>")) # No auto-print %}
+    </ul>
+    {- (string/repeat "<span>1</span>" n) # Not HTML escaped -}
+  </body>
+</html>
+```
+
+### main.janet
+
+```
+(import temple)
+(temple/add-loader)
+
+(import ./foo :as foo)
+(foo/render :a "hello")
+```
+
+There is one more involved example in the (/janet-lang/spork/examples/temple/). You
+can runnit with `janet  examples/temple/example.janet`.
+
+## Test
+
+This module contains a simple test helper when you do not need a specialized
+library.
+
+### assert
+
+Modified version of assert, with some nice error handling.
+
+```clojure
+(test/assert false "How is this?")
+# => ✘ How is this?
+(test/assert true "OK")
+# => ✔true
+```
+
+### assert-not
+
+Invert assert.
+
+```clojure
+(test/assert-not false "OK")
+# => ✔true
+```
+
+### assert-error
+
+Test passes if forms throw errors.
+
+```clojure
+(test/assert-error "To err is natural" (error "Bad"))
+# => ✔true
+```
+
+### assert-no-error
+
+Test passes if forms throw errors.
+
+```clojure
+(test/assert-no-error "To not err is desired" (do "Good"))
+# => ✔true
+```
+
+### start-suite
+
+Starts test suite, which counts all and passed tests.
+
+### end-suite
+
+Ends test suite and print summary.
+
+### All together
+
+Example of simple test suite.
+
+```clojure
+(import spork/test)
+
+(test/start-suite 0)
+
+(test/assert true "is always true")
+(test/assert-not false "is always false")
+(test/assert-error "To err is natural" (error "Bad"))
+(test/assert-no-error "To not err is desired" (do "Good"))
+
+(test/end-suite)
+
+# =>
+
+Test suite 0 finished in 0.000 soconds
+4 of 4 tests passed.
+
+```
+
+### timeit
+
+Time code execution using os/clock, and print the result.
+Returns the value of the timed expression.
+
+```
+repl> (misc/timeit (sum (seq [i :range [1 1000000]] (math/sqrt i))))
+Elapsed time: 0.0718288 seconds
+6.66666e+08
+```
+
+### capture-stdout
+
+Runs the form and captures stdout. Returns tuple with result and captured
+stdout in string.
+
+```clojure
+(capture-stdout
+  (do
+    (print "Interesting output")
+    true))
+# => (true "Interesting output")
+```
+
+### supress-stdout
+
+Runs the form, but supresses its stdout.
+
+```clojure
+(suppress-stdout (print "Hello world!"))
+# => nil
+```
+
 ## Misc
 
 ### Dedent
@@ -189,11 +339,29 @@ Run `(doc argparse/argparse)` after importing for more information.
 Remove indentation after concatenating the arguments.
 
 ```clojure
-(misc/dedent ```
+(misc/dedent ``
       ho
         hoho
           hohoho
-```) => "ho\n  hoho\n    hohoho"
+``))))) => "ho\n  hoho\n    hohoho"
+```
+
+### set*
+
+Allow parallel mutation of multiple mutable variables.  (All right
+hand sides are computed before setting the left hand sides.)
+
+```
+# you can use it with vars
+(var a 2)
+(var b 3)
+(misc/set* [a b] [b (+ a b)])
+[a b] => [3 5]
+
+# or you can use it with arrays, for example:
+(def x @[2 3])
+(misc/set* [[x 0] [x 1]] [(in x 1) (+ (in x 0) (in x 1))])
+x => @[3 5]
 ```
 
 ## Installation
@@ -201,4 +369,3 @@ Remove indentation after concatenating the arguments.
 ```
 [sudo] jpm install https://github.com/janet-lang/spork.git
 ```
-

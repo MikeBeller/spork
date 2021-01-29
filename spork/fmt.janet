@@ -36,16 +36,16 @@
       :long-buffer (/ (* "@" :long-bytes) ,(pnode :buffer))
       :raw-value (+ :string :buffer :long-string :long-buffer
                     :parray :barray :ptuple :btuple :struct :dict :span)
-      :value (* :spacing (any (+ :ws :readermac)) :raw-value :spacing)
-      :root (any :value)
-      :root2 (any (* :value :value))
-      :ptuple (/ (group (* "(" :root (+ ")" (error "")))) ,(pnode :ptuple))
-      :btuple (/ (group (* "[" :root (+ "]" (error "")))) ,(pnode :btuple))
-      :struct (/ (group (* "{" :root2 (+ "}" (error "")))) ,(pnode :struct))
-      :parray (/ (group (* "@(" :root (+ ")" (error "")))) ,(pnode :array))
-      :barray (/ (group (* "@[" :root (+ "]" (error "")))) ,(pnode :array))
-      :dict (/ (group (* "@{" :root2 (+ "}" (error "")))) ,(pnode :table))
-      :main :root}))
+      :value (* (any (+ :ws :readermac)) :raw-value :spacing)
+      :root (* :spacing (any :value))
+      :root2 (* :spacing (any (* :value :value)))
+      :ptuple (/ (group (* "(" :root (+ ")" (error)))) ,(pnode :ptuple))
+      :btuple (/ (group (* "[" :root (+ "]" (error)))) ,(pnode :btuple))
+      :struct (/ (group (* "{" :root2 (+ "}" (error)))) ,(pnode :struct))
+      :parray (/ (group (* "@(" :root (+ ")" (error)))) ,(pnode :array))
+      :barray (/ (group (* "@[" :root (+ "]" (error)))) ,(pnode :array))
+      :dict (/ (group (* "@{" :root2 (+ "}" (error)))) ,(pnode :table))
+      :main (* :root (+ -1 (error)))}))
 
 (defn- make-tree
   "Turn a string of source code into a tree that will be printed"
@@ -54,7 +54,7 @@
 
 (defn- remove-extra-newlines
   "Remove leading and trailing newlines. Also remove
-   some some extra consecutive newlines."
+   some extra consecutive newlines."
   [node]
   (match node
     [tag (xs (array? xs))]
